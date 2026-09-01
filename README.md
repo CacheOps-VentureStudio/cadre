@@ -6,7 +6,7 @@ CADRE is a single-file, local-first app for building a small staff of AI agents 
 
 No accounts. No server. No build step. No network calls. The whole product is one HTML file, and your organization lives in your browser's local storage.
 
-**Live app:** `https://YOUR-USERNAME.github.io/cadre/` *(set after enabling GitHub Pages — see setup)*
+**Live app:** https://cacheops-venturestudio.github.io/cadre/
 
 ---
 
