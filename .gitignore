@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+cadre-org-backup-*.json
+*-deploy-kit.zip
+*-agent-card.md
