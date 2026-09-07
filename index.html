@@ -675,7 +675,7 @@ function sRecord(rc){
 function sanitizeState(st){
   if(!st||typeof st!=='object')return st;
   const seenA={},seenR={},out={
-    principal:sStr(st.principal,80),
+    principal:sLine(st.principal,80),
     principalBrief:sStr(st.principalBrief,8000),
     firstRun:!!st.firstRun,
     customRoles:[],agents:[]
@@ -1061,8 +1061,8 @@ function buildBerthFiles(a){
     '\n\n## Character\n'+p.rule+
     '\n\nThis file is who you are. What you may do lives in AGENTS.md and CHARTER.md — character never overrides authority, hard lines, or scope.';
   let user='# USER — the Principal\n\nName: '+(S.principal||'the Principal')+'\n';
-  if(S.principalBrief)user+='\n'+S.principalBrief+'\n';
-  if(a.notes)user+='\nSeat notes from the Principal: '+a.notes+'\n';
+  if(S.principalBrief)user+='\n'+deHead(S.principalBrief)+'\n';
+  if(a.notes)user+='\nSeat notes from the Principal: '+deHead(a.notes)+'\n';
   let trimmed=false;
   if(user.length>1375){user=user.slice(0,1372)+'\u2026';trimmed=true;}
   const rt=(a.runtime||'local');
@@ -1263,7 +1263,7 @@ function importAgentCard(text){
     duties:duties.length?duties:r.duties.filter(d=>d.on).map(d=>d.t),
     addons,
     persona:PERSONAS.find(x=>x.id===s0.persona)?s0.persona:'straight',
-    notes:'',aim:String(s0.aim||''),playbook:String(s0.playbook||''),
+    notes:'',aim:'',playbook:'',
     runtime:r.localOnly?'local':'',status:'active',
     commissionedAt:new Date().toISOString().slice(0,10),version:1,fresh:true};
   const rec=ensureRecord(a);
@@ -1690,7 +1690,7 @@ function renderExport(){
     <input type="file" id="importFile" accept="application/json" style="display:none"></div></div>
   <div class="expanel"><h3>Agent packets</h3><p>Per-seat deliverables: the charter (portable orders) and a machine-readable manifest.</p>
     <div class="exlist">${agents.length?agents.map(a=>`<div class="exrow"><span class="nm"><b>${esc(a.callsign)}</b> · ${esc(roleById(a.roleId).title)}</span><button onclick="copyCharter('${jsq(a.uid)}')">Copy</button><button onclick="dlCharter('${jsq(a.uid)}')">.md</button><button onclick="dlManifest('${jsq(a.uid)}')">.json</button><button onclick="dlBerth('${jsq(a.uid)}')">.zip</button><button onclick="dlCard('${jsq(a.uid)}')">card</button></div>`).join(''):'<div class="exrow"><span class="nm" style="color:var(--faint)">Nothing commissioned yet.</span></div>'}</div></div>
-  <div class="expanel"><h3>Import an agent card</h3><p>Paste a card exported from any CADRE. Skills and personality arrive; standing procedures and aim stay off the card unless the exporter ticked that box. The charter regenerates around <i>this</i> org\u2019s Principal.</p>
+  <div class="expanel"><h3>Import an agent card</h3><p>Paste a card exported from any CADRE. Skills and personality arrive; standing procedures and aim never import \u2014 the receiving Principal writes their own. The charter regenerates around <i>this</i> org\u2019s Principal.</p>
     <div class="field"><textarea id="cardIn" rows="4" aria-label="Agent card" placeholder="Paste the whole AGENT CARD .md \u2014 or just its machine record"></textarea></div>
     <button class="btn btn-brass" onclick="importCardUI()">Import card</button></div>
   <div class="expanel"><h3>Principal</h3><p>The name every charter serves. Changing it bumps every charter version — re-export after.</p>

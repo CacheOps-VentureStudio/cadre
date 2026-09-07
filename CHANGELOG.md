@@ -10,6 +10,8 @@ Fixed
 - An imported agent card’s new seat (and any new custom role) is passed through `sanitizeState()` like a backup. Incoming duties and addons are split on newlines the way skills are, then capped at 60 entries / 140 characters.
 - Custom-role cards no longer copy mission, Day One, or fence-test text from the file. Imports get the template mission, Day One brief, and fence test. Title, function, duties, restrictions, access, engine, and default tier still come from the card.
 - Reset clears the failed-load flag after wiping localStorage, so a new org can save.
+- Imported cards never bring standing procedures or aim into the charter; the receiving Principal writes their own.
+- Principal name and Hermes USER.md text can no longer open a Markdown section.
 
 Changed
 
