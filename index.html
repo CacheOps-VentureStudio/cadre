@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <title>CADRE — Commission your AI staff</title>
 <style>
 :root{
@@ -614,29 +615,115 @@ ROLES.forEach(r=>r.engine=ENGINE_BY_ROLE[r.id]||'standard');
 /* ============================================================ state ============================================================ */
 const LS_KEY='cadre_org_v1';
 let mem=null; // in-memory fallback
+let stateBroken=false; // set if saved state failed to parse/sanitize: never overwrite it
 function loadState(){
-  try{const raw=localStorage.getItem(LS_KEY);if(raw)return sanitizeState(JSON.parse(raw));}catch(e){}
+  try{const raw=localStorage.getItem(LS_KEY);if(raw)return sanitizeState(JSON.parse(raw));}
+  catch(e){console.error('CADRE: saved state could not be read -- leaving it on disk untouched.',e);stateBroken=true;}
   return mem||{principal:'',principalBrief:'',firstRun:true,agents:[],customRoles:[]};
 }
 function saveState(){
+  if(stateBroken){console.error('CADRE: refusing to overwrite saved state that could not be read.');return;}
   try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){mem=S;}
 }
-let S=loadState();
-if(typeof S.principalBrief!=='string')S.principalBrief='';
-if(!Array.isArray(S.customRoles))S.customRoles=[];
 /* ---- service records ---- */
 function freshRecord(){return{wins:0,misses:0,fires:{},unknown:{},events:[]};}
+/* ---- import hardening ---------------------------------------------------
+   A backup file is just JSON somebody was handed, so treat it as hostile.
+   sanitizeState() is the only door into state, so it rebuilds the object
+   field by field: known keys, coerced types, capped lengths. Unknown keys
+   are dropped on purpose. This also runs on every localStorage load, so it
+   must stay lossless for legitimate data -- if you add a field to a seat or
+   a role, add it here too or it will not survive a reload. */
+const sStr=(v,n)=>String(v==null?'':v).slice(0,n);
+const sInt=(v,lo,hi,d)=>{const x=parseInt(v,10);return Number.isFinite(x)&&x>=lo&&x<=hi?x:d;};
+const sOne=(v,allowed,d)=>allowed.indexOf(v)>=0?v:d;
+const sTexts=(v,max,n)=>Array.isArray(v)?v.slice(0,max).map(x=>sStr(x,n)).filter(Boolean):[];
+const sDuties=(v,max,n)=>Array.isArray(v)?v.slice(0,max)
+  .map(d=>d&&typeof d==='object'?{t:sStr(d.t,n),on:!!d.on}:{t:sStr(d,n),on:true})
+  .filter(d=>d.t):[];
+const sDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)?String(v):new Date().toISOString().slice(0,10);
+function sRecord(rc){
+  const out=freshRecord();
+  if(!rc||typeof rc!=='object')return out;
+  out.wins=sInt(rc.wins,0,999999,0);
+  out.misses=sInt(rc.misses,0,999999,0);
+  ['fires','unknown'].forEach(k=>{
+    const src=rc[k];if(!src||typeof src!=='object')return;
+    Object.keys(src).slice(0,200).forEach(sk=>{out[k][sStr(sk,140)]=sInt(src[sk],0,999999,0);});
+  });
+  if(Array.isArray(rc.events))out.events=rc.events.slice(0,200)
+    .filter(e=>e&&typeof e==='object')
+    .map(e=>({d:sDate(e.d),t:sStr(e.t,32),text:sStr(e.text,1000),skill:sStr(e.skill,140)}));
+  return out;
+}
 function sanitizeState(st){
   if(!st||typeof st!=='object')return st;
-  const seenA={},seenR={};
-  if(Array.isArray(st.customRoles))st.customRoles.forEach(r=>{
-    if(!r)return;let id=cleanId(r.id);if(!id||seenR[id])id='c'+Math.random().toString(36).slice(2,9);seenR[id]=1;r.id=id;
+  const seenA={},seenR={},out={
+    principal:sStr(st.principal,80),
+    principalBrief:sStr(st.principalBrief,8000),
+    firstRun:!!st.firstRun,
+    customRoles:[],agents:[]
+  };
+  if(Array.isArray(st.customRoles))st.customRoles.slice(0,120).forEach(r=>{
+    if(!r||typeof r!=='object')return;
+    let id=cleanId(r.id);
+    if(!id||seenR[id])id='c'+Math.random().toString(36).slice(2,9);
+    seenR[id]=1;
+    const title=sStr(r.title,80)||'Imported seat';
+    const tierDefault=sInt(r.tierDefault,0,TIERS.length-1,1);
+    out.customRoles.push({
+      id,custom:true,archived:!!r.archived,
+      /* single char, stored unescaped -- esc() is applied at render */
+      mark:sStr(r.mark,1)||title.charAt(0).toUpperCase()||'\u25c6',
+      title,
+      hint:sStr(r.hint,120)||'Short and speakable',
+      oneLiner:sStr(r.oneLiner,300),
+      func:sStr(r.func,300),
+      bestFor:sTexts(r.bestFor,6,200),
+      duties:sDuties(r.duties,60,140),
+      addons:sDuties(r.addons,60,140),
+      restrictions:sTexts(r.restrictions,20,300),
+      access:sTexts(r.access,20,300),
+      engine:sOne(r.engine,Object.keys(ENGINES),'standard'),
+      tierDefault,
+      tierRecMax:sInt(r.tierRecMax,0,TIERS.length-1,Math.min(tierDefault+1,3)),
+      localOnly:!!r.localOnly,
+      mission:sStr(r.mission,4000),
+      dayOne:sStr(r.dayOne,4000),
+      refusal:sStr(r.refusal,2000),
+      refusalPass:sStr(r.refusalPass,2000)
+    });
   });
-  if(Array.isArray(st.agents))st.agents.forEach(a=>{
-    if(!a)return;let id=cleanId(a.uid);if(!id||seenA[id])id='a'+Math.random().toString(36).slice(2,9);seenA[id]=1;a.uid=id;
-    if(a.roleId!=null)a.roleId=cleanId(a.roleId);
+  /* the only ids a seat may point at -- an orphan seat throws in renderOrg */
+  const okRole={};
+  ROLES.forEach(r=>{okRole[r.id]=1;});
+  out.customRoles.forEach(r=>{okRole[r.id]=1;});
+  if(Array.isArray(st.agents))st.agents.slice(0,200).forEach(a=>{
+    if(!a||typeof a!=='object')return;
+    const roleId=cleanId(a.roleId);
+    if(!okRole[roleId])return;
+    let id=cleanId(a.uid);
+    if(!id||seenA[id])id='a'+Math.random().toString(36).slice(2,9);
+    seenA[id]=1;
+    out.agents.push({
+      uid:id,roleId,
+      callsign:sStr(a.callsign,24)||'Unnamed',
+      tier:sInt(a.tier,0,TIERS.length-1,0),
+      duties:sTexts(a.duties,60,140),
+      addons:sTexts(a.addons,60,140),
+      persona:sOne(a.persona,PERSONAS.map(p=>p.id),'straight'),
+      notes:sStr(a.notes,8000),
+      aim:sStr(a.aim,2000),
+      playbook:sStr(a.playbook,4000),
+      runtime:sOne(a.runtime,['local','vps','cloud',''],'local'),
+      status:sOne(a.status,['active','paused','retired'],'active'),
+      commissionedAt:sDate(a.commissionedAt),
+      version:sInt(a.version,1,99999,1),
+      fresh:!!a.fresh,
+      record:sRecord(a.record)
+    });
   });
-  return st;
+  return out;
 }
 function ensureRecord(a){
   if(!a.record||typeof a.record!=='object')a.record=freshRecord();
@@ -657,12 +744,19 @@ const allRoles=()=>ROLES.concat(S.customRoles||[]);
 const roleById=id=>allRoles().find(r=>r.id===id);
 const agentByRole=rid=>S.agents.find(a=>a.roleId===rid&&a.status!=='retired');
 const activeAgents=()=>S.agents.filter(a=>a.status!=='retired');
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 /* Escape a value for safe use inside a single-quoted inline handler / attribute. Backslash first. */
 const jsq=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\r?\n/g,' ');
 /* Canonical id shape: our generated ids are [a-z0-9] only. Reject anything else at the door. */
 const cleanId=s=>String(s==null?'':s).replace(/[^a-zA-Z0-9]/g,'').slice(0,32);
 const deHead=s=>String(s==null?'':s).split('\n').map(function(l){return l.replace(/^(\s*)#+\s?/,'$1');}).join('\n');
+
+/* State is loaded HERE, after esc/jsq/cleanId/deHead exist: sanitizeState()
+   depends on cleanId, and const declarations are not hoisted. Moving this
+   back above them makes loadState() throw and silently wipe every saved org. */
+let S=loadState();
+if(typeof S.principalBrief!=='string')S.principalBrief='';
+if(!Array.isArray(S.customRoles))S.customRoles=[];
 let toastTimer=null;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2600);}
 function copyText(txt,msg){
@@ -700,7 +794,7 @@ function renderRoster(){
       ?`<span class="rmeta">Serving as <b>${esc(a.callsign)}</b> · ${TIERS[a.tier].key} ${TIERS[a.tier].name}</span><button class="btn btn-ghost" style="margin-left:auto" onclick="nav('org');setTimeout(()=>openDrawer('${jsq(a.uid)}'),60)">Manage</button>`
       :`<button class="btn btn-brass" onclick="openWizard('${jsq(r.id)}')">Review &amp; commission</button>`;
     return `<article class="rcard ${a?'commissioned':''} ${r.requiredFirst&&!a?'priority':''}">
-      <div class="rhead"><div class="insig">${r.mark}</div><div><div class="rtitle">${esc(r.title)}</div><div class="rbadges">${badges}</div></div></div>
+      <div class="rhead"><div class="insig">${esc(r.mark)}</div><div><div class="rtitle">${esc(r.title)}</div><div class="rbadges">${badges}</div></div></div>
       <p class="roneliner">${esc(r.oneLiner)}</p>
       <div class="rmeta"><b>Best for:</b> ${r.bestFor.map(esc).join('; ')}</div>
       <div class="rmeta"><b>Default authority:</b> <span class="chip" style="border-color:${tier.hex};color:${tier.hex}">${tier.key} ${tier.name}</span></div>
@@ -1270,7 +1364,7 @@ function renderOrg(){
     const r=roleById(a.roleId),t=TIERS[a.tier],paused=a.status==='paused';
     return `<g class="seat ${a.fresh?'fresh':''}" onclick="openDrawer('${jsq(a.uid)}')" opacity="${paused?.55:1}">
       <circle class="ring" cx="${x}" cy="${y}" r="30" fill="var(--well)" stroke="${t.hex}" stroke-width="2.5" ${paused?'stroke-dasharray="4 4"':''}/>
-      <text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" letter-spacing="1">${r.mark}</text>
+      <text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" letter-spacing="1">${esc(r.mark)}</text>
       <text x="${x}" y="${y+50}" text-anchor="middle" font-size="12.5" class="seatname">${esc(a.callsign)}</text>
       <text x="${x}" y="${y+66}" text-anchor="middle" font-size="9.5" fill="${t.hex}">${t.key} ${esc(t.name).toUpperCase()}</text>
       ${r.localOnly?`<text x="${x}" y="${y+80}" text-anchor="middle" font-size="8.5" fill="var(--brass-dim)">LOCAL ONLY</text>`:''}
@@ -1312,7 +1406,7 @@ function openDrawer(uid){
   const r=roleById(a.roleId),t=TIERS[a.tier];
   const d=$('drawer');
   d.innerHTML=`<button class="modal-x" aria-label="Close" onclick="closeDrawer()">×</button>
-  <div class="dhead"><div class="insig" style="border-color:${t.hex};color:${t.hex}">${r.mark}</div><div><div class="dtitle">${esc(a.callsign)}</div><div class="drole">${esc(r.title)} · commissioned ${a.commissionedAt} · charter v${a.version}</div></div></div>
+  <div class="dhead"><div class="insig" style="border-color:${t.hex};color:${t.hex}">${esc(r.mark)}</div><div><div class="dtitle">${esc(a.callsign)}</div><div class="drole">${esc(r.title)} · commissioned ${esc(a.commissionedAt)} · charter v${esc(a.version)}</div></div></div>
   <div class="rbadges" style="margin:8px 0 2px">
     <span class="chip" style="border-color:${t.hex};color:${t.hex}">${t.key} ${esc(t.name)}</span>
     ${r.localOnly?`<span class="chip badge-local">${({local:'Runs local',vps:'Own server',cloud:'Cloud runtime'})[a.runtime||'local']}</span>`:''}
@@ -1360,7 +1454,7 @@ function addCustomRole(def){
   const access=lines(def.access);if(!access.length)access.push('Only what the Principal hands it per task');
   const engine=ENGINES[def.engine]?def.engine:'standard';
   const tierDefault=Number.isInteger(def.tierDefault)&&def.tierDefault>=0&&def.tierDefault<=4?def.tierDefault:1;
-  const r={id:'c'+Date.now().toString(36),custom:true,mark:esc(title.trim().charAt(0).toUpperCase()||'\u25c6'),
+  const r={id:'c'+Date.now().toString(36),custom:true,mark:(title.trim().charAt(0).toUpperCase()||'\u25c6'),
     title,hint:'Short and speakable',oneLiner:func,func,
     bestFor:duties.slice(0,3),
     duties:duties.map(t=>({t,on:true})),addons:[],
@@ -1518,7 +1612,16 @@ function exportOrg(){download('cadre-org-backup-'+new Date().toISOString().slice
 function importOrg(e){
   const f=e.target.files[0];if(!f)return;
   const rd=new FileReader();
-  rd.onload=()=>{try{const j=JSON.parse(rd.result);if(!j.cadre_backup||!j.state||!Array.isArray(j.state.agents))throw 0;S=sanitizeState(j.state);S.firstRun=false;saveState();renderRoster();renderOrg();renderExport();$('railPrincipal').textContent=S.principal||'—';toast('Backup restored — '+activeAgents().length+' active seat(s)');}catch(err){toast('That file isn\u2019t a CADRE backup');}};
+  rd.onload=()=>{try{
+    const j=JSON.parse(rd.result);
+    if(!j.cadre_backup||!j.state||!Array.isArray(j.state.agents))throw 0;
+    const now=activeAgents().length;
+    if(now&&!confirm('Restore this backup? The '+now+' seat(s) currently in this browser are replaced. Export them first if you want to keep them.')){e.target.value='';return;}
+    S=sanitizeState(j.state);S.firstRun=false;saveState();
+    renderRoster();renderOrg();renderExport();
+    $('railPrincipal').textContent=S.principal||'\u2014';
+    toast('Backup restored \u2014 '+activeAgents().length+' active seat(s)');
+  }catch(err){toast('That file isn\u2019t a CADRE backup');}};
   rd.readAsText(f);e.target.value='';
 }
 function saveBrief(){
@@ -1573,8 +1676,8 @@ function recPanel(a){
   const icons={win:'\u2605',miss:'\u2716',promote:'\u25b2',demote:'\u25bc','skill+':'\u271a','skill-':'\u2212',commission:'\u2691',note:'\u270e'};
   const skills=a.duties.concat(a.addons);
   return `<details class="agentrec" ${a.status==='retired'?'style="opacity:.55"':''}>
-  <summary><span class="rmark">${r.mark}</span><span><b>${esc(a.callsign)}</b> \u00b7 ${esc(r.title)} \u00b7 ${t.key}${a.status!=='active'?' \u00b7 '+a.status.toUpperCase():''}</span>
-    <span class="rec-kpis"><span><b>${rec.wins}</b> W</span><span><b>${rec.misses}</b> M</span><span><b>${age}</b>d in service</span><span>charter v${a.version}</span></span></summary>
+  <summary><span class="rmark">${esc(r.mark)}</span><span><b>${esc(a.callsign)}</b> \u00b7 ${esc(r.title)} \u00b7 ${t.key}${a.status!=='active'?' \u00b7 '+esc(String(a.status).toUpperCase()):''}</span>
+    <span class="rec-kpis"><span><b>${rec.wins}</b> W</span><span><b>${rec.misses}</b> M</span><span><b>${age}</b>d in service</span><span>charter v${esc(a.version)}</span></span></summary>
   <div class="rec-open">
     <div class="rmeta" style="margin-top:12px">Commissioned ${esc(a.commissionedAt)} \u00b7 ${esc(ENGINES[r.engine].name)} \u00b7 ${rec.events.length} entries on file</div>
     ${suggs.map(sg=>`<div class="sugg"><span>${esc(sg.t)}</span>${sg.k==='adopt'?`<button class="btn btn-ghost" onclick="adoptSkill('${jsq(a.uid)}',this)" data-kw="${esc(sg.add)}">Quick-add</button>`:sg.k==='promote'?`<button class="btn btn-brass" onclick="bumpTier('${jsq(a.uid)}',1);renderStats()">Promote</button>`:sg.k==='demote'?`<button class="btn btn-ghost" onclick="bumpTier('${jsq(a.uid)}',-1);renderStats()">Demote</button>`:''}</div>`).join('')}
@@ -1611,7 +1714,7 @@ $('railPrincipal').textContent=S.principal||'—';
 if(S.firstRun)firstRun();
 
 /* Minimal public handle — lets power users script or inspect their org from the console. */
-window.CADRE={version:'1.9',get S(){return S},TIERS,ROLES,HARDLINES,ENGINES,esc,jsq,cleanId,sanitizeState,allRoles,addCustomRole,forgePrefill,buildCharter,buildManifest,buildBerthFiles,buildDeployFiles,buildAgentCard,importAgentCard,buildTrial,ensureRecord,logEvent,addSkills,dropSkill,parseAAR,applyDebrief,quickLog,bumpTier,suggestFor,renderStats,makeZip,
+window.CADRE={version:'1.9.1',get S(){return S},TIERS,ROLES,HARDLINES,ENGINES,esc,jsq,cleanId,sanitizeState,allRoles,addCustomRole,forgePrefill,buildCharter,buildManifest,buildBerthFiles,buildDeployFiles,buildAgentCard,importAgentCard,buildTrial,ensureRecord,logEvent,addSkills,dropSkill,parseAAR,applyDebrief,quickLog,bumpTier,suggestFor,renderStats,makeZip,
   _debug:{get wiz(){return wiz},get walk(){return walk}}};
 </script>
 </body>
