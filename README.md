@@ -1,5 +1,7 @@
 # CADRE
 
+*Configurable Agent Deployment & Restriction Engine*
+
 **Commission your AI staff the way you'd hire one: defined roles, limited authority, written orders.**
 
 CADRE is a single-file, local-first app for building a small staff of AI agents — a Chief of Staff plus specialists — each with a written **charter**: portable orders you paste into any AI. Claude, ChatGPT, Gemini, a local model on Ollama or LM Studio, OpenRouter, AnythingLLM, or a Hermes/OpenClaw-style agent app. The charter is the product; the AI underneath is interchangeable.
