@@ -40,9 +40,7 @@ Only the latest released version receives security fixes.
 Please **do not** open a public issue for security problems.
 
 - Use GitHub's **Report a vulnerability** feature under this repository's
-  **Security** tab (Privately report a vulnerability), **or**
-- Contact the maintainer privately via the address listed on the
-  organization/owner profile.
+  **Security** tab (Privately report a vulnerability).
 
 Please include: a description of the issue, steps to reproduce, the affected
 version/commit, and any suggested remediation.
