@@ -2,10 +2,11 @@
 
 ## v2.0.0 — 2026-09-08 · Card layer: squads, Founders, skills
 
-Post-review fix (unreleased)
+Post-review fixes (unreleased)
 
 - Squad/member role IDs now encode the SKU length, preventing different valid pairs from overwriting the same role. Intact legacy references migrate without losing seat identity or service history; ambiguous saved ownership fails closed without overwriting the original storage. Every incoming role is checked for existing ownership before any import mutation.
 - Added a focused regression suite covering the exact collision, updates, identifier bounds, migration, ownership checks, Founders lookup, and the lead walkthrough. Other card-layer review findings remain open; this does not qualify v2.0.0 for release.
+- Preserve complete restriction statements through squad and legacy seat imports, updates, exports and Forge creation. Removed automatic negation, updated the Forge prompt to request complete statements, and made the roster restriction label neutral. Five regression tests cover wording, persistence, defaults, sanitization and the walkthrough. Previously rewritten saved text is not automatically repaired.
 
 Added
 

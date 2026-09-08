@@ -917,7 +917,7 @@ function renderRoster(){
       <p class="roneliner">${esc(r.oneLiner)}</p>
       <div class="rmeta"><b>Best for:</b> ${r.bestFor.map(esc).join('; ')}</div>
       <div class="rmeta"><b>Default authority:</b> <span class="chip" style="border-color:${tier.hex};color:${tier.hex}">${tier.key} ${tier.name}</span></div>
-      <div class="rmeta"><b>Never:</b> ${esc((r.restrictions[0]||DEFAULT_RESTRICTION).replace(/^Never\s*/i,''))}</div>
+      <div class="rmeta"><b>Restriction:</b> ${esc(r.restrictions[0]||DEFAULT_RESTRICTION)}</div>
       <div class="rmeta"><b>Engine:</b> ${esc(ENGINES[r.engine].name)}</div>
       <div class="rfoot">${foot}${r.custom&&!a?`<button class="btn btn-ghost" style="margin-left:auto" onclick="removeCustomRole('${jsq(r.id)}')">Remove</button>`:''}</div>
     </article>`;
@@ -1585,8 +1585,8 @@ function shortTitle(t){return String(t).replace(/^.*\u00b7\s*/,'');}
 function roleFromMember(c,m,id){
   const r=m.role;
   const duties=r.duties.length?r.duties:['Handle '+m.title.toLowerCase()+' work the squad lead assigns'];
-  let restrictions=r.restrictions.length?r.restrictions:[DEFAULT_RESTRICTION];
-  restrictions=restrictions.map(x=>/^never/i.test(x)?x:'Never '+x.charAt(0).toLowerCase()+x.slice(1));
+  const restrictions=r.restrictions.length?r.restrictions:[DEFAULT_RESTRICTION];
+  // Restrictions are complete statements; adding negation can reverse their meaning.
   const tierRecMax=r.tierRecMax>=0?r.tierRecMax:Math.min(r.tierDefault+1,3);
   const func=r.func||r.oneLiner||c.squad.blurb||('Serves in the '+c.squad.title+' squad.');
   return {id,custom:true,archived:false,
@@ -1986,7 +1986,7 @@ function makeCustomRole(def){
   const duties=lines(def.duties);if(!duties.length)duties.push('Handle '+title.toLowerCase()+' work the Principal assigns');
   let restrictions=lines(def.restrictions);
   if(!restrictions.length)restrictions=[DEFAULT_RESTRICTION];
-  restrictions=restrictions.map(x=>/^never/i.test(x)?x:'Never '+x.charAt(0).toLowerCase()+x.slice(1));
+  // Restrictions are complete statements; adding negation can reverse their meaning.
   const access=lines(def.access);if(!access.length)access.push('Only what the Principal hands it per task');
   const engine=ENGINES[def.engine]?def.engine:'standard';
   const tierDefault=Number.isInteger(def.tierDefault)&&def.tierDefault>=0&&def.tierDefault<=4?def.tierDefault:1;
@@ -2043,7 +2043,7 @@ function openForge(){
   <div class="field"><label for="fTitle">Seat title</label><input id="fTitle" maxlength="40" placeholder="e.g. Meal Planner, Grant Tracker, D&amp;D Loremaster"></div>
   <div class="field"><label for="fFunc">What it does \u2014 one line</label><input id="fFunc" maxlength="140" placeholder="e.g. Plans the week\u2019s dinners around what\u2019s in the house and the family\u2019s schedule."></div>
   <div class="field"><label for="fDuties">Duties \u2014 one per line</label><textarea id="fDuties" rows="3" placeholder="Draft a weekly dinner plan every Sunday\nKeep a running grocery list\nFlag when a plan repeats too soon"></textarea></div>
-  <div class="field"><label for="fNever">It must never\u2026 \u2014 one per line <span style="color:var(--faint);font-weight:400">(the five hard lines apply regardless)</span></label><textarea id="fNever" rows="2" placeholder="Order groceries or spend anything\nAssume dietary needs it hasn\u2019t been told"></textarea></div>
+  <div class="field"><label for="fNever">Complete restrictions \u2014 one per line <span style="color:var(--faint);font-weight:400">(the five hard lines apply regardless)</span></label><textarea id="fNever" rows="2" placeholder="Never order groceries or spend anything\nOnly use dietary needs the Principal has provided"></textarea></div>
   <div class="field"><label for="fAccess">What it needs access to <span style="color:var(--faint);font-weight:400">(optional)</span></label><textarea id="fAccess" rows="2" placeholder="The shared grocery note\nThe family calendar (read-only)"></textarea></div>
   <div class="field"><label for="fEngine">Engine class</label><select class="tiersel" id="fEngine">${Object.keys(ENGINES).map(k=>`<option value="${k}" ${k==='standard'?'selected':''}>${ENGINES[k].key} \u2014 ${esc(ENGINES[k].name)}</option>`).join('')}</select></div>
   <div class="field"><label for="fTier">Default authority</label><select class="tiersel" id="fTier">${TIERS.map(t=>`<option value="${t.n}" ${t.n===1?'selected':''}>${t.key} ${esc(t.name)} \u2014 ${esc(t.short)}</option>`).join('')}</select></div>

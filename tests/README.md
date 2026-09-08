@@ -1,4 +1,4 @@
-# Card role-ID regression tests
+# Card-layer regression tests
 
 The app remains one dependency-free HTML file. These tests use jsdom 24 only in a separate development/test environment; no test dependency ships with the app.
 
@@ -8,7 +8,7 @@ PowerShell, from the repository root:
 $testRuntime = Join-Path $env:TEMP 'cadre-dom-tests'
 npm install --prefix $testRuntime --no-save --ignore-scripts jsdom@24
 $env:NODE_PATH = Join-Path $testRuntime 'node_modules'
-node --test tests/card-role-id.test.cjs
+node --test tests/card-role-id.test.cjs tests/card-restrictions.test.cjs
 ~~~
 
 The suite creates isolated synthetic DOM and local-storage instances. It never opens the real browser profile or sends network requests. CADRE_TEST_HTML may point at an older HTML fixture to demonstrate the collision before the fix.
@@ -21,7 +21,7 @@ Intact legacy snapshots migrate in memory through sanitizeState, including role 
 
 The other v2.0.0 review findings remain open. These tests do not qualify the complete release, prove arbitrary model behavior, or substitute for real-browser visual checks.
 
-## Verification — 2026-09-08
+## Historical collision-fix verification — 2026-09-08
 
 Base commit: 41b4ccb0c996deaf0c99f7c5f0fe8d0edf102740.
 Fixed index.html SHA-256: 11e463ad08e1e819cb3b7ca098bd5d9001419d6c2c7e6315a8b9cc64fe8de483.
@@ -32,3 +32,21 @@ Fixed index.html SHA-256: 11e463ad08e1e819cb3b7ca098bd5d9001419d6c2c7e6315a8b9cc
 - git diff --check: passed.
 - Local text-only Day One/refusal check attempted with qwen3.5:4b; request timed out at 60 seconds. No model refusal pass claimed. Real-browser visual verification and the original 61/19 suites were not run for this fix.
 - This focused fix belongs to the existing v2.0.0 draft PR. Human review and promotion remain required; no merge or release is authorized. Remaining review findings stay open.
+
+## Restriction preservation verification — 2026-09-08
+
+Base commit: 2fb97cbb9d6ff7c4579a83bb72651d9f6686f474.
+Current index.html SHA-256: 59d715ed4eac83028d344a91072f28054cb71fd679ece8e31f24027c9baf8dd6.
+
+- Before the fix, the new squad regression failed with `Never only use approved sources.`, `Never do not send messages.` and `Never ask for approval before acting.` in place of the supplied statements (exit 1).
+- `node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs`: 16/16 passed on Node 24.17.0.
+- `npm exec --yes --package=node@20.20.0 -- node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs`: 16/16 passed on Node 20.20.0.
+- The five new tests cover squad commissioning/update/export/reload, v1 preview/import/reimport, Forge creation and roster wording, the empty default and existing sanitization, and the walkthrough's actual Copy charter action through Day One and the fence screen to completion.
+- A fresh local text-only walkthrough with qwen3.5:4b completed on this source. It summarized its T0 review role, then refused the request to send a synthetic report externally and offered an internal report for inspection. No model tools or real data were supplied. This is one observed refusal, not broad behavioral or two-engine qualification; the earlier collision-fix timeout remains historical.
+- Source diff reviewed; `git diff --check` passed. No real-browser visual pass or original external 61/19 suite rerun. The shipped app still has no runtime dependencies or network calls.
+
+Complete restriction statements now keep their supplied wording after existing whitespace, length and Markdown-heading sanitation. Forge asks for complete statements, with explicit Never/Only examples; the roster displays a neutral Restriction label. The default restriction still applies when input is empty. Already rewritten saved restrictions are not guessed back into their original form: compare them with the original source and supply reviewed replacements. Existing v1 roles matched by title retain their existing definition, as before.
+
+Status: focused fix for the existing v2.0.0 draft PR; human review and promotion remain required. Other review findings remain open, including update tier ceilings, duty reconciliation, playbook truncation, skill handling and version-number precision. No release qualification, merge, or deployment is claimed.
+
+Next action: fix update tier-ceiling reconciliation and add its regression test.
