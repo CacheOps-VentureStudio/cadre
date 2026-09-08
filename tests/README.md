@@ -96,3 +96,17 @@ Verification:
 Boundaries: this only changes the free tool's card-update mechanics. No paid charters or real external legal/platform rules were added. Already copied external charters require replacement. Removed squad members retain their existing archived-role/seat behavior; retiring a member is separate work. No merge, promotion, release, sale or deployment is claimed.
 
 Next action: fix the 8000-to-4000 character playbook loss at commissioning and add an end-to-end import/commission/reload/export regression. Skill compatibility/confirmation/access handling, version-number precision and commercial qualification remain open.
+
+## Catalog roster correction — 2026-09-08
+
+Base commit: 80adb7c (feat/2.0.0-card-layer after the duty-update and tier-ceiling fixes).
+Current index.html SHA-256: b1d0184257291ab43bb3b419b9a87f1bd75f481e2982a4e0ba70c5d9e6c8521b.
+
+- `CATALOG` metadata only: seat counts and one-line blurbs now match the approved rosters (85 seats across 16 squads; Data 7, Content 6, Design 6, Recruiter 5, Support 5, Email Admin 5). No loader, import, sanitize, or charter code changed. `CATALOG` is now exposed on the `window.CADRE` debug object so tests can read it; it was already reachable by same-realm script as a top-level constant, so this widens nothing.
+- `tests/catalog.test.cjs` pins the sixteen SKUs in order, each squad's seat count and replaced free seat, the 85 total, that no replaced seat is required-first or local-only, that no two squads replace the same seat, and that no title or blurb names a retired seat (case-insensitive). Against the original HTML it fails 3/3 (exit 1). An independent red-team pass found the first draft passed on case-shifted retired names and on `replaces:'cos'`; both gaps are closed and eight mutants (case-shifted names, space-separated "Publisher that", `replaces` to `cos`, duplicate `replaces`, a sum-preserving seat swap, a retired title) each fail the suite.
+- `node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-duty-update.test.cjs tests/card-tier-update.test.cjs tests/catalog.test.cjs`: 34/34 passed on Node 22.23.0.
+- `git diff --check`: passed. No network reference, script, or import added. The library renders nothing while `SHELF_URL` is empty, so the shipped page is visually unchanged until a shelf is configured.
+- Version number unchanged: v2.0.0 is still unreleased, so this rides inside it rather than becoming a 2.0.1.
+- Open, outside this change: the app still accepts a card whose `squad.replaces` names a required-first or local-only role (`sanitizeCardV2` does not filter on those flags); the catalog test guards only the catalog. `${c.seats}` in `renderLibrary` is interpolated without `esc()`; it is a number from the constant today.
+
+Status: focused metadata fix stacked on the existing v2.0.0 draft PR; human review and promotion remain required. No release qualification, merge, or deployment is claimed. Other review findings remain open.

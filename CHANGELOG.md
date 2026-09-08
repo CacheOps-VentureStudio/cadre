@@ -4,6 +4,8 @@
 
 Post-review fixes (unreleased)
 
+- Card library catalog corrected to the approved rosters: 85 seats across 16 squads (Data 7, Content 6, Design 6, Recruiter 5, Support 5, Email Admin 5); blurbs no longer name retired or never-filed seats (Guardrail Checker, screener, grader, Publisher-that-never-publishes). Metadata only: no loader, import, sanitize, or charter code changed. A regression test pins the SKUs, per-squad seat counts and replaced free seats, the 85 total, and the retired names.
+
 - Reconcile squad duty updates while preserving local additions and opt-outs across versions. Reject empty/over-capacity scope atomically; retain history and paused/retired isolation. Legacy installations recover provenance from the original installed-version card before updating. Added 11 regressions and independently red-teamed multi-version and recovery cases.
 
 - Squad updates now lower active seats to a reduced role ceiling without granting automatic promotions. Demotions record the old/new tiers and preset version; update notices request re-exporting affected charters. Four tests cover tier combinations, exports/reload, preserved records and the updated lead walkthrough.
