@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.0.0 — 2026-09-08 · Card layer: squads, Founders, skills
+
+Added
+
+- **Squad cards.** A new card format (`cadre_card: 2`, kind `squad`) installs a whole squad of seats from one file: every member's role text (mission, Day One brief, fence test, duties, restrictions, access, engine, tiers) and its seat defaults (callsign, persona, tier, aim, standing procedures). Squads render in their own section under the roster with a procedurally drawn card face, member chips, and a **Commission squad** button that seats every member at once and runs one walkthrough — the lead's.
+- **Founders cards** (kind `founders`) attach a number (1–100) to an installed squad; the badge appears on the card face and the service record. **Skill cards** (kind `skill`) land in a skill library; any active seat can slot one from its drawer.
+- **Versioned updates in place.** Squad member roles get deterministic ids (`p<sku>m<key>`), so importing a newer card refreshes the role text, keeps every seated agent with its callsign, tier, and record, bumps their charter versions, logs a `preset-update` event, and archives members the new version dropped. Same or older versions are refused.
+- **Setup chooser.** Opening the wizard on a free seat that an installed squad `replaces` asks: single seat (free) or the squad you own. Installing a squad over a seated free seat asks whether to hand the lane over (callsign, tier, and record move to the squad lead; the free seat retires) or keep both. Both can coexist — nothing collides.
+- **Squad doctrine.** The Chief of Staff's routing table groups seats by squad and packets to the lead; lead charters carry a *Squad* section that permits assignment inside the squad only; the field manual's first section explains the one narrow exception to "no sideways chatter". The CoS restriction reads "assign work across squads" rather than "to other agents".
+- **Import surface.** Backup & settings → Import a card accepts seat cards (v1), squad, Founders, and skill cards — pasted, dropped on the box, or chosen as a file (1 MB cap). Squad imports preview every seat and its tier before anything lands.
+- Card face SVG export per squad. An in-app **Card library** screen (rail item VI): the sixteen-squad catalog as names, sizes, and one-line blurbs only, with Buy links built from `SHELF_URL` and an owned state for installed squads. Four routes point at it (first-run note, wizard standing-procedures hint on lanes with a squad, Squads empty state, field manual §10). Everything is inert while `SHELF_URL` is empty; the link is a plain `<a href>`, never a request.
+
+Security
+
+- Cards are hostile input: every field is re-shaped by `sanitizeCardV2()` (shape regexes for sku, member key, version, mark; caps on members, strings, and arrays); the emblem is the only geometry a card supplies and it is whitelisted to path-data characters, otherwise the card face falls back to the mark; unknown keys never reach state. `sanitizeState()` grew `squads`, `skills`, and the preset fields on roles, so backups round-trip and hostile backups still can't brick the app.
+- Squad cards are the one deliberate widening of v1.9.2's import surface: their member **playbook and aim** are the publisher's and do import, header-demoted at import and fenced as PROCEDURE ONLY in the charter, capped at 8,000 / 140 characters. Seat cards (v1) still strip the buyer's own.
+- No network primitives; CSP unchanged (`connect-src 'none'`).
+
+Changed
+
+- Custom-role `mark` may be two characters. Version is `2.0.0`. Service records show `card vX · preset vY` on squad seats.
+
 ## v1.9.2 — 2026-09-07 · Import hardening
 
 Fixed
