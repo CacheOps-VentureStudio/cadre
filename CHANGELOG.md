@@ -2,6 +2,11 @@
 
 ## v2.0.0 — 2026-09-08 · Card layer: squads, Founders, skills
 
+Post-review fix (unreleased)
+
+- Squad/member role IDs now encode the SKU length, preventing different valid pairs from overwriting the same role. Intact legacy references migrate without losing seat identity or service history; ambiguous saved ownership fails closed without overwriting the original storage. Every incoming role is checked for existing ownership before any import mutation.
+- Added a focused regression suite covering the exact collision, updates, identifier bounds, migration, ownership checks, Founders lookup, and the lead walkthrough. Other card-layer review findings remain open; this does not qualify v2.0.0 for release.
+
 Added
 
 - **Squad cards.** A new card format (`cadre_card: 2`, kind `squad`) installs a whole squad of seats from one file: every member's role text (mission, Day One brief, fence test, duties, restrictions, access, engine, tiers) and its seat defaults (callsign, persona, tier, aim, standing procedures). Squads render in their own section under the roster with a procedurally drawn card face, member chips, and a **Commission squad** button that seats every member at once and runs one walkthrough — the lead's.

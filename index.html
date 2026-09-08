@@ -737,6 +737,7 @@ function sRecord(rc){
 }
 function sanitizeState(st){
   if(!st||typeof st!=='object')return st;
+  st=migrateSquadRoleIds(st);
   const seenA={},seenR={},out={
     principal:sLine(st.principal,80),
     principalBrief:sStr(st.principalBrief,8000),
@@ -1533,7 +1534,51 @@ function sanitizeCardV2(j){
     fits:sTexts(k.fits,16,20).map(sSku).filter(Boolean)}};
 }
 /* deterministic: the same sku+key always lands on the same role id, so a newer card updates in place instead of duplicating */
-function squadRoleId(sku,key){return ('p'+cleanId(sku)+'m'+cleanId(key)).slice(0,32);}
+/* Length-prefix the cleaned SKU: valid inputs fit exactly within the 32-character
+   state ID limit, and decoding does not depend on a delimiter absent from keys. */
+function squadRoleId(sku,key){
+  if(!sSku(sku)||!sKey(key))return '';
+  const s=cleanId(sku);
+  return 'p'+s.length.toString(16)+s+key;
+}
+function legacySquadRoleId(sku,key){return ('p'+cleanId(sku)+'m'+cleanId(key)).slice(0,32);}
+/* Migrate intact v2 backups without changing caller-owned data. An already
+   colliding snapshot has no reliable owner for its shared seat: fail closed. */
+function migrateSquadRoleIds(st){
+  const roles=Array.isArray(st.customRoles)?st.customRoles.slice(0,120):[],remap=new Map(),owners=new Map();
+  roles.forEach(r=>{
+    if(!r||typeof r!=='object')return;
+    const p=r.preset;
+    if(!p||!sSku(p.sku)||!sKey(p.key)||r.squad!==p.sku)return;
+    const old=cleanId(r.id),next=squadRoleId(p.sku,p.key);
+    if(old!==legacySquadRoleId(p.sku,p.key)||old===next)return;
+    if(remap.has(old)||roles.filter(x=>x&&cleanId(x.id)===old).length!==1)
+      throw new Error('Ambiguous squad role IDs. Restore an intact backup before importing.');
+    remap.set(old,next);owners.set(old,p.sku);
+  });
+  if(!remap.size)return st;
+  const planned=new Set();
+  roles.forEach(r=>{
+    if(!r||typeof r!=='object')return;
+    const old=cleanId(r.id),next=remap.get(old)||old;
+    if(planned.has(next))throw new Error('Squad role ID migration conflicts with an existing role. Keep the original backup.');
+    planned.add(next);
+  });
+  const squads=Array.isArray(st.squads)?st.squads.slice(0,40):[];
+  squads.forEach(q=>{
+    if(!q||!Array.isArray(q.members))return;
+    q.members.slice(0,12).forEach(id=>{
+      const old=cleanId(id);
+      if(remap.has(old)&&owners.get(old)!==q.sku)
+        throw new Error('A saved role is shared by different squads. Restore an intact backup.');
+    });
+  });
+  return Object.assign({},st,{
+    customRoles:roles.map(r=>r&&typeof r==='object'?Object.assign({},r,{id:remap.get(cleanId(r.id))||r.id}):r),
+    agents:Array.isArray(st.agents)?st.agents.slice(0,200).map(a=>a&&typeof a==='object'?Object.assign({},a,{roleId:remap.get(cleanId(a.roleId))||a.roleId}):a):st.agents,
+    squads:squads.map(q=>q&&typeof q==='object'?Object.assign({},q,{members:Array.isArray(q.members)?q.members.slice(0,12).map(id=>remap.get(cleanId(id))||id):q.members}):q)
+  });
+}
 function squadBySku(sku){return S.squads.find(q=>q.sku===sku);}
 function memberTier(m){const rm=m.role.tierRecMax>=0?m.role.tierRecMax:Math.min(m.role.tierDefault+1,3);const want=m.seat&&m.seat.tier>=0?m.seat.tier:m.role.tierDefault;return Math.min(want,rm);}
 function shortTitle(t){return String(t).replace(/^.*\u00b7\s*/,'');}
@@ -1561,6 +1606,19 @@ function roleFromMember(c,m,id){
 function installSquad(c){
   const sku=c.preset.sku,existing=squadBySku(sku),oldVer=existing?existing.version:null;
   if(existing&&!semverGt(c.preset.version,oldVer)){toast(c.squad.title+' squad v'+oldVer+' already installed'+(oldVer===c.preset.version?'':' \u2014 this card is older'));return false;}
+  /* Check every target before replacing any role: custom/foreign roles and
+     damaged cross-squad references must never become an implicit update. */
+  const targets=new Set();
+  for(const m of c.members){
+    const id=squadRoleId(sku,m.key),prior=S.customRoles.filter(r=>r.id===id);
+    if(!id||targets.has(id)||prior.length>1||
+      prior.some(r=>!r.preset||r.preset.sku!==sku||r.preset.key!==m.key||r.squad!==sku)||
+      S.squads.some(q=>q.sku!==sku&&q.members.includes(id))){
+      toast('Squad role identity conflicts with existing data — nothing was imported');
+      return false;
+    }
+    targets.add(id);
+  }
   const ids=[],oldIds=existing?existing.members.slice():[];
   c.members.forEach(m=>{
     const id=squadRoleId(sku,m.key),def=roleFromMember(c,m,id);
