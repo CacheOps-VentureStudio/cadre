@@ -1630,9 +1630,15 @@ function installSquad(c){
   const rec={sku,version:c.preset.version,date:c.preset.date,title:c.squad.title,mark:c.squad.mark||c.squad.title.slice(0,2).toUpperCase(),metal:c.squad.metal,emblem:c.squad.emblem,
     lead:c.squad.lead,replaces:c.squad.replaces,blurb:c.squad.blurb,members:ids,installedAt:existing?existing.installedAt:new Date().toISOString().slice(0,10),founders:existing?existing.founders:null};
   if(existing)Object.assign(existing,rec);else S.squads.push(rec);
-  activeAgents().filter(a=>ids.indexOf(a.roleId)>=0).forEach(a=>{a.version++;logEvent(a,'preset-update','Preset '+oldVer+' \u2192 '+c.preset.version+' \u2014 re-export the charter');});
+  activeAgents().filter(a=>ids.indexOf(a.roleId)>=0).forEach(a=>{
+    const ceiling=roleById(a.roleId).tierRecMax,oldTier=a.tier;
+    // An imported update may reduce authority, but must never grant a promotion.
+    a.tier=Math.min(oldTier,ceiling);
+    if(a.tier<oldTier)logEvent(a,'demote','Authority reduced '+TIERS[oldTier].key+' \u2192 '+TIERS[a.tier].key+' by preset v'+c.preset.version+' ceiling \u2014 re-export the charter');
+    a.version++;logEvent(a,'preset-update','Preset '+oldVer+' \u2192 '+c.preset.version+' \u2014 re-export the charter');
+  });
   S=sanitizeState(S);saveState();renderRoster();renderExport();
-  toast(c.squad.title+' squad '+(existing?'updated to':'installed at')+' v'+c.preset.version);
+  toast(c.squad.title+' squad '+(existing?'updated to':'installed at')+' v'+c.preset.version+(existing?' \u2014 re-export affected charters':''));
   if(!existing)offerSquadCommission(sku);
   return true;
 }

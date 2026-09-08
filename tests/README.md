@@ -8,7 +8,7 @@ PowerShell, from the repository root:
 $testRuntime = Join-Path $env:TEMP 'cadre-dom-tests'
 npm install --prefix $testRuntime --no-save --ignore-scripts jsdom@24
 $env:NODE_PATH = Join-Path $testRuntime 'node_modules'
-node --test tests/card-role-id.test.cjs tests/card-restrictions.test.cjs
+node --test tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs
 ~~~
 
 The suite creates isolated synthetic DOM and local-storage instances. It never opens the real browser profile or sends network requests. CADRE_TEST_HTML may point at an older HTML fixture to demonstrate the collision before the fix.
@@ -33,10 +33,10 @@ Fixed index.html SHA-256: 11e463ad08e1e819cb3b7ca098bd5d9001419d6c2c7e6315a8b9cc
 - Local text-only Day One/refusal check attempted with qwen3.5:4b; request timed out at 60 seconds. No model refusal pass claimed. Real-browser visual verification and the original 61/19 suites were not run for this fix.
 - This focused fix belongs to the existing v2.0.0 draft PR. Human review and promotion remain required; no merge or release is authorized. Remaining review findings stay open.
 
-## Restriction preservation verification — 2026-09-08
+## Historical restriction preservation verification — 2026-09-08
 
 Base commit: 2fb97cbb9d6ff7c4579a83bb72651d9f6686f474.
-Current index.html SHA-256: 59d715ed4eac83028d344a91072f28054cb71fd679ece8e31f24027c9baf8dd6.
+Restriction-fix index.html SHA-256: 59d715ed4eac83028d344a91072f28054cb71fd679ece8e31f24027c9baf8dd6.
 
 - Before the fix, the new squad regression failed with `Never only use approved sources.`, `Never do not send messages.` and `Never ask for approval before acting.` in place of the supplied statements (exit 1).
 - `node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs`: 16/16 passed on Node 24.17.0.
@@ -49,4 +49,27 @@ Complete restriction statements now keep their supplied wording after existing w
 
 Status: focused fix for the existing v2.0.0 draft PR; human review and promotion remain required. Other review findings remain open, including update tier ceilings, duty reconciliation, playbook truncation, skill handling and version-number precision. No release qualification, merge, or deployment is claimed.
 
-Next action: fix update tier-ceiling reconciliation and add its regression test.
+Subsequent tier-ceiling fix and current next action are recorded below.
+
+
+## Update tier-ceiling verification — 2026-09-08
+
+Base commit: 409f0c0dfc7fa1791e09168b51f714007513dee8.
+Current index.html SHA-256: a0b2c47256622ac0c24a3b8a76a295e42c5c0542a86e94e0fbd24df3e47c3a8f.
+
+An accepted newer squad card now lowers each affected active seat to the updated role ceiling if needed. It never raises authority automatically. Actual reductions add a demotion event naming old/new tiers and the card version; the existing preset-update event and single seat-version increment remain. The update notice reminds the user to re-export affected charters. Existing manual promotion controls remain unchanged; tierRecMax remains a recommended ceiling in those flows. Retired records, removed members and unrelated seats are not rewritten by this correction.
+
+Verification performed:
+
+- The new T2-to-T0 regression failed against the previous source with actual tier 2, expected 0 (exit 1).
+- `node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs`: 20/20 passed on Node 24.17.0.
+- `npm exec --yes --package=node@20.20.0 -- node --test --test-reporter=tap tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs`: 20/20 passed on Node 20.20.0.
+- Four new tests cover T2-to-T0 state, manifest/card/charter exports and reload, all 20 tier/ceiling combinations, no automatic promotion, demotion events, preserved settings/history, retired/unrelated seats, rejection of same/older cards, and the updated lead's three-step DOM walkthrough.
+- A fresh synthetic local qwen3.5:4b walkthrough used the charter after an actual T2-to-T0 card update. The model identified T0 Observe authority and refused the external-send request. No model tools or real data were used. This is one observed refusal, not broad or two-engine behavioral qualification.
+- Full focused diff reviewed; `git diff --check` passed. Existing 16 focused regressions also passed. No original external 61/19 suite rerun or real-browser visual verification.
+
+The app cannot update charters already copied into external runtimes; the Principal must replace those copies. Already installed cards do not rerun the update on reload or same-version reimport. This fix applies when a newer card update is accepted; review any seat that already exceeds its installed role ceiling.
+
+Status: focused fix for the existing draft PR; human review and promotion required. Duty reconciliation, playbook truncation, skill compatibility/confirmation/access handling and version-number precision remain open, along with commercial qualification work. No merge, release or deployment is claimed.
+
+Next action: reconcile active duty scope with updated squad cards and add a regression for removed and newly added duties.
