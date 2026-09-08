@@ -8,7 +8,7 @@ PowerShell, from the repository root:
 $testRuntime = Join-Path $env:TEMP 'cadre-dom-tests'
 npm install --prefix $testRuntime --no-save --ignore-scripts jsdom@24
 $env:NODE_PATH = Join-Path $testRuntime 'node_modules'
-node --test tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs
+node --test tests/card-duty-update.test.cjs tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs
 ~~~
 
 The suite creates isolated synthetic DOM and local-storage instances. It never opens the real browser profile or sends network requests. CADRE_TEST_HTML may point at an older HTML fixture to demonstrate the collision before the fix.
@@ -52,10 +52,10 @@ Status: focused fix for the existing v2.0.0 draft PR; human review and promotion
 Subsequent tier-ceiling fix and current next action are recorded below.
 
 
-## Update tier-ceiling verification — 2026-09-08
+## Historical update tier-ceiling verification — 2026-09-08
 
 Base commit: 409f0c0dfc7fa1791e09168b51f714007513dee8.
-Current index.html SHA-256: a0b2c47256622ac0c24a3b8a76a295e42c5c0542a86e94e0fbd24df3e47c3a8f.
+Tier-fix index.html SHA-256: a0b2c47256622ac0c24a3b8a76a295e42c5c0542a86e94e0fbd24df3e47c3a8f.
 
 An accepted newer squad card now lowers each affected active seat to the updated role ceiling if needed. It never raises authority automatically. Actual reductions add a demotion event naming old/new tiers and the card version; the existing preset-update event and single seat-version increment remain. The update notice reminds the user to re-export affected charters. Existing manual promotion controls remain unchanged; tierRecMax remains a recommended ceiling in those flows. Retired records, removed members and unrelated seats are not rewritten by this correction.
 
@@ -72,4 +72,27 @@ The app cannot update charters already copied into external runtimes; the Princi
 
 Status: focused fix for the existing draft PR; human review and promotion required. Duty reconciliation, playbook truncation, skill compatibility/confirmation/access handling and version-number precision remain open, along with commercial qualification work. No merge, release or deployment is claimed.
 
-Next action: reconcile active duty scope with updated squad cards and add a regression for removed and newly added duties.
+Subsequent duty reconciliation and current next action are recorded below.
+
+## Duty reconciliation and Red Team — 2026-09-08
+
+Base commit: 589d74fb0bfc66bb10e8530e748e9716b12acbb8.
+Current index.html SHA-256: edd182ffa76b80faa949ebebb15dd808cb25b6290e19b89fe4c4790a3def5710.
+
+Accepted card updates now reconcile active and paused seats before applying any mutation. Withdrawn card duties leave scope; new required duties enter scope; optional duties stay opt-in. Existing disabled choices and local additions survive later card adoption, withdrawal and reintroduction. Separate bounded metadata records the card baseline, local base additions and each seat's local/disabled choices. Duplicate effective duties are removed. Updates producing empty scope or exceeding saved scope/choice limits fail atomically; retired and unrelated seats stay unchanged. Service counts and history are retained; effective scope changes receive an audit event and the existing single update version increment.
+
+Legacy recovery: older saved roles have no reliable card/local provenance. A newer update is refused until the original installed-version card is reimported. Recovery requires matching roster, member ownership and installed version, with the supplied baseline duties present in the corresponding saved catalogs. It changes provenance only, preserving scope, tier, version and history, then permits the newer update. Use a reviewed original card or backup: unsigned content cannot be authenticated by this compatibility check. Without the original card, recovery remains blocked rather than guessing and losing local work.
+
+Verification:
+
+- Original regression failed: withdrawn `Remove` remained active and new `Added` was missing (exit 1).
+- `node --test --test-reporter=tap tests/card-duty-update.test.cjs tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs`: 31/31 passed on Node 24.17.0.
+- `npm exec --yes --package=node@20.20.0 -- node --test --test-reporter=tap tests/card-duty-update.test.cjs tests/card-role-id.test.cjs tests/card-restrictions.test.cjs tests/card-tier-update.test.cjs`: 31/31 passed on Node 20.20.0.
+- Eleven new tests cover scope changes, choices, cross-category moves, persistence/exports, local base tasks, atomic overflow, paused/retired isolation, legacy recovery, multi-version provenance, opt-out reappearance, empty-scope refusal and the lead walkthrough.
+- An independent Red Team initially reproduced four defects despite the first 27 green tests: legacy local-base loss, loss after card adoption/withdrawal, opt-out reactivation and empty scope. The implementation and regressions were corrected. All 14 independent adversarial/recovery checks passed on the current source, including actual prior-version storage, multi-member rejection and disabled-history capacity. The final independent review found no unresolved new duty-reconciliation findings within the tested scope.
+- Local qwen3.5:4b synthetic Day One/fence run completed on this source after a duty and tier update. It identified T0 authority and refused immediate external sending, but suggested obtaining specific permission to send instead of offering a draft-only alternative. Result: PARTIAL, not a full fence pass. No tools or real data were supplied; behavioral release qualification remains blocked.
+- Focused diff and `git diff --check` reviewed. Original external 61/19 suites, real-browser visual checks and two-engine behavioral qualification were not performed.
+
+Boundaries: this only changes the free tool's card-update mechanics. No paid charters or real external legal/platform rules were added. Already copied external charters require replacement. Removed squad members retain their existing archived-role/seat behavior; retiring a member is separate work. No merge, promotion, release, sale or deployment is claimed.
+
+Next action: fix the 8000-to-4000 character playbook loss at commissioning and add an end-to-end import/commission/reload/export regression. Skill compatibility/confirmation/access handling, version-number precision and commercial qualification remain open.

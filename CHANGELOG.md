@@ -4,6 +4,8 @@
 
 Post-review fixes (unreleased)
 
+- Reconcile squad duty updates while preserving local additions and opt-outs across versions. Reject empty/over-capacity scope atomically; retain history and paused/retired isolation. Legacy installations recover provenance from the original installed-version card before updating. Added 11 regressions and independently red-teamed multi-version and recovery cases.
+
 - Squad updates now lower active seats to a reduced role ceiling without granting automatic promotions. Demotions record the old/new tiers and preset version; update notices request re-exporting affected charters. Four tests cover tier combinations, exports/reload, preserved records and the updated lead walkthrough.
 
 - Squad/member role IDs now encode the SKU length, preventing different valid pairs from overwriting the same role. Intact legacy references migrate without losing seat identity or service history; ambiguous saved ownership fails closed without overwriting the original storage. Every incoming role is checked for existing ownership before any import mutation.
