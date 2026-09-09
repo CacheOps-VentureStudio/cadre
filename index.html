@@ -826,7 +826,7 @@ function sanitizeState(st){
     const fn=fo?sInt(fo.number,1,100,0):0;
     out.squads.push({sku,version:sVer(q.version)||'1.0.0',date:sDate(q.date),title:sLine(q.title,80)||sku,
       mark:sMark(q.mark)||sku.slice(3,5).toUpperCase(),metal:sOne(q.metal,METALS,'brass'),emblem:safePath(q.emblem),
-      lead:sKey(q.lead),replaces:sOne(q.replaces,ROLES.map(r=>r.id),null),blurb:sLine(q.blurb,300),members,
+      lead:sKey(q.lead),replaces:sOne(q.replaces,ROLES.filter(r=>!r.requiredFirst&&!r.localOnly).map(r=>r.id),null),blurb:sLine(q.blurb,300),members,
       installedAt:sDate(q.installedAt),
       founders:fn?{number:fn,of:sInt(fo.of,1,100,100),issued:sDate(fo.issued),artVersion:sVer(fo.artVersion)||'1.0.0',emblem:safePath(fo.emblem)}:null});
   });

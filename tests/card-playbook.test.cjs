@@ -70,6 +70,8 @@ test('sanitizeCardV2 drops replaces that target a required-first or local-only b
     assert.equal(api.sanitizeCardV2(squad({replaces:'email'})).squad.replaces,'email');
     assert.equal(api.importCard(JSON.stringify(squad({replaces:'cos'}))),true);
     assert.equal(api.S.squads[0].replaces,null);
+    const backup=JSON.parse(JSON.stringify(api.S));backup.squads[0].replaces='cos';
+    assert.equal(api.sanitizeState(backup).squads[0].replaces,null);
   }finally{dom.window.close();}
 });
 test('library seat counts are integers from CATALOG, so renderLibrary interpolates a number',()=>{
