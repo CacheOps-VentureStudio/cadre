@@ -650,22 +650,22 @@ const SHELF_URL='';
 const SHELF_PRICE='$39.99';
 /* Discovery catalog (D-26c): names, sizes and one-line blurbs only. No charters, briefs, playbooks or art live here. skus must match the private cards. */
 const CATALOG=[
- {sku:'sq-vibecode',title:'Vibe Code',seats:4,replaces:null,blurb:'Describe it, it builds it, and a Guardrail Checker catches the leaked key, the runaway bill, the deleted table \u2014 the things a non-coder can\u2019t see.'},
+ {sku:'sq-vibecode',title:'Vibe Code',seats:4,replaces:null,blurb:'Describe it, it builds a preview, a second seat explains what changed, and a Build Risk Reviewer catches the leaked key, the destructive command, the runaway bill \u2014 the things a non-coder can\u2019t see.'},
  {sku:'sq-developer',title:'Developer',seats:6,replaces:null,blurb:'Architect, Implementer, Reviewer, Test Writer, Docs Writer, Integration Checker. A maker-checker loop for people who read the diff.'},
- {sku:'sq-researcher',title:'Researcher',seats:7,replaces:'scout',blurb:'One question framed, three source hunters in parallel, an extractor, a fact checker, a synthesizer. Every claim labeled.'},
- {sku:'sq-data',title:'Data',seats:6,replaces:null,blurb:'From messy source to a chart you\u2019d show someone: mapper, cleaner, schema reader, query writer, result validator, chart builder.'},
- {sku:'sq-content',title:'Content',seats:5,replaces:'scribe',blurb:'Idea Miner, Drafter, Editor, Repurposer, Publisher-that-never-publishes. One good idea becomes five pieces in your voice.'},
- {sku:'sq-webmaster',title:'Webmaster',seats:5,replaces:null,blurb:'Site audit, content, SEO, uptime watch \u2014 the whole unofficial web team, each seat fenced.'},
- {sku:'sq-professor',title:'Professor',seats:5,replaces:'tutor',blurb:'Curriculum planner, lecture writer, quiz builder, grader. Teaches so the work stays yours.'},
- {sku:'sq-brain',title:'Business Brain',seats:5,replaces:'brain',blurb:'Market scanner, numbers analyst, risk checker, brief writer, and the record that says \u201cnot on record\u201d instead of guessing.'},
- {sku:'sq-sales',title:'Sales',seats:5,replaces:null,blurb:'Pipeline you can trust: research, outreach drafts, follow-up tracking, objection prep, a checker on every claim.'},
- {sku:'sq-product',title:'Product',seats:5,replaces:null,blurb:'Feedback synthesis to spec to roadmap, with a critic seat that argues the other side before you commit.'},
- {sku:'sq-ops',title:'Ops',seats:5,replaces:null,blurb:'Runbooks, vendor watch, process fixes, incident notes \u2014 the operations desk a solo operator never had.'},
- {sku:'sq-design',title:'Design',seats:5,replaces:null,blurb:'Brief reader, concept generator, layout builder, critique pass. Design that gets reviewed before it gets shipped.'},
- {sku:'sq-recruiter',title:'Recruiter',seats:4,replaces:null,blurb:'Sourcer, screener, outreach writer, scheduler. Triage-and-handoff, nothing sent without you.'},
- {sku:'sq-support',title:'Support',seats:4,replaces:null,blurb:'Ticket triage, draft replies in your voice, escalation packets, a knowledge-base seat that files what it learns.'},
- {sku:'sq-emailadmin',title:'Email Admin',seats:4,replaces:'email',blurb:'The free seat, grown up: triage, drafting, follow-up tracking and a VIP watch \u2014 four seats, one lead, still sends nothing.'},
- {sku:'sq-netadmin',title:'Network Admin',seats:4,replaces:'netadmin',blurb:'Inventory, update watch, backup verification, renewal watch. Reports only; touches nothing.'}
+ {sku:'sq-researcher',title:'Researcher',seats:7,replaces:'scout',blurb:'One question framed, three source hunters in parallel, an extractor, a fact checker, a synthesizer. Every claim labeled; not found is an answer.'},
+ {sku:'sq-data',title:'Data',seats:7,replaces:null,blurb:'From messy source to a chart you\u2019d show someone: mapper, schema reader, cleaner, query writer, query safety reviewer, result validator, chart builder. Nothing written to a source.'},
+ {sku:'sq-content',title:'Content',seats:6,replaces:'scribe',blurb:'Idea Miner, Drafter, Editor, Repurposer, Claims & Rights Reviewer, Publishing Clerk. One good idea becomes five pieces in your voice; you publish.'},
+ {sku:'sq-webmaster',title:'Webmaster',seats:5,replaces:null,blurb:'Site audit, page drafts, uptime and expiry watch, a pre-flight check on every change \u2014 the whole unofficial web team, each seat fenced, nothing goes live by a seat.'},
+ {sku:'sq-professor',title:'Professor',seats:5,replaces:'tutor',blurb:'Dean, lecturer, quiz master, feedback writer, rigor checker. A faculty for one learner. No grades, nothing written as yours.'},
+ {sku:'sq-brain',title:'Business Brain',seats:5,replaces:'brain',blurb:'Record keeper, decision logger, procedure scribe, answer clerk, contradiction checker \u2014 an append-only record that says \u201cnot on record\u201d instead of guessing.'},
+ {sku:'sq-sales',title:'Sales',seats:5,replaces:null,blurb:'Pipeline you can trust: account research, outreach drafts, call prep and debrief, a checker on every claim. You send; the squad contacts no one.'},
+ {sku:'sq-product',title:'Product',seats:5,replaces:null,blurb:'Feedback synthesis to spec to roadmap, with a metrics reader and a critic seat that argues the other side before you commit.'},
+ {sku:'sq-ops',title:'Ops',seats:5,replaces:null,blurb:'Runbooks, process maps, a checklist runner, incident records, a change reviewer that gives every change a way back \u2014 the operations desk a solo operator never had.'},
+ {sku:'sq-design',title:'Design',seats:6,replaces:null,blurb:'Brief reader, concept generator, layout builder, critique pass, asset provenance reviewer, handoff writer. Design that gets reviewed before it gets shipped.'},
+ {sku:'sq-recruiter',title:'Recruiter',seats:5,replaces:null,blurb:'Hiring brief, talent sourcing, outreach drafts, interview kit, a decision boundary reviewer. Evidence, not decisions \u2014 nothing ranked, nothing sent without you.'},
+ {sku:'sq-support',title:'Support',seats:5,replaces:null,blurb:'Ticket triage, draft replies in your voice, a knowledge-base seat, and two checkers: account boundary and policy. You send, refund, and reset.'},
+ {sku:'sq-emailadmin',title:'Email Admin',seats:5,replaces:'email',blurb:'The free seat, grown up: an inbound sentry reads first, a clerk sorts, a drafter writes, a tracker keeps the ledger, an outbound reviewer reads every draft \u2014 five seats, still sends nothing.'},
+ {sku:'sq-netadmin',title:'Network Admin',seats:4,replaces:'netadmin',blurb:'Inventory, update and expiry watch, backup verification, a change reviewer. Reports only; touches nothing.'}
 ];
 const catalogFor=builtinId=>SHELF_URL?CATALOG.find(c=>c.replaces===builtinId):null;
 const buyUrl=sku=>SHELF_URL+(SHELF_URL.indexOf('#')<0?'#':'-')+sku;
@@ -2374,7 +2374,7 @@ $('railPrincipal').textContent=S.principal||'—';
 if(S.firstRun)firstRun();
 
 /* Minimal public handle — lets power users script or inspect their org from the console. */
-window.CADRE={version:VERSION,get S(){return S},TIERS,ROLES,HARDLINES,ENGINES,esc,jsq,cleanId,sanitizeState,allRoles,addCustomRole,forgePrefill,buildCharter,buildManifest,buildBerthFiles,buildDeployFiles,buildAgentCard,importAgentCard,parseCard,sanitizeCardV2,importCard,installSquad,installFounders,installSkill,commissionSquad,takeoverSquad,removeSquad,squadRoleId,squadBySku,buildCardSVG,semverGt,safePath,buildTrial,ensureRecord,logEvent,addSkills,dropSkill,parseAAR,applyDebrief,quickLog,bumpTier,suggestFor,renderStats,makeZip,
+window.CADRE={version:VERSION,get S(){return S},TIERS,ROLES,HARDLINES,ENGINES,CATALOG,esc,jsq,cleanId,sanitizeState,allRoles,addCustomRole,forgePrefill,buildCharter,buildManifest,buildBerthFiles,buildDeployFiles,buildAgentCard,importAgentCard,parseCard,sanitizeCardV2,importCard,installSquad,installFounders,installSkill,commissionSquad,takeoverSquad,removeSquad,squadRoleId,squadBySku,buildCardSVG,semverGt,safePath,buildTrial,ensureRecord,logEvent,addSkills,dropSkill,parseAAR,applyDebrief,quickLog,bumpTier,suggestFor,renderStats,makeZip,
   _debug:{get wiz(){return wiz},get walk(){return walk}}};
 </script>
 </body>
