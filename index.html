@@ -807,7 +807,7 @@ function sanitizeState(st){
       persona:sOne(a.persona,PERSONAS.map(p=>p.id),'straight'),
       notes:sStr(a.notes,8000),
       aim:sLine(a.aim,2000),
-      playbook:sStr(a.playbook,4000),
+      playbook:sStr(a.playbook,8000),
       runtime:sOne(a.runtime,['local','vps','cloud',''],'local'),
       status:sOne(a.status,['active','paused','retired'],'active'),
       commissionedAt:sDate(a.commissionedAt),
@@ -826,7 +826,7 @@ function sanitizeState(st){
     const fn=fo?sInt(fo.number,1,100,0):0;
     out.squads.push({sku,version:sVer(q.version)||'1.0.0',date:sDate(q.date),title:sLine(q.title,80)||sku,
       mark:sMark(q.mark)||sku.slice(3,5).toUpperCase(),metal:sOne(q.metal,METALS,'brass'),emblem:safePath(q.emblem),
-      lead:sKey(q.lead),replaces:sOne(q.replaces,ROLES.map(r=>r.id),null),blurb:sLine(q.blurb,300),members,
+      lead:sKey(q.lead),replaces:sOne(q.replaces,ROLES.filter(r=>!r.requiredFirst&&!r.localOnly).map(r=>r.id),null),blurb:sLine(q.blurb,300),members,
       installedAt:sDate(q.installedAt),
       founders:fn?{number:fn,of:sInt(fo.of,1,100,100),issued:sDate(fo.issued),artVersion:sVer(fo.artVersion)||'1.0.0',emblem:safePath(fo.emblem)}:null});
   });
@@ -1521,7 +1521,7 @@ function sanitizeCardV2(j){
     }
     const lead=sKey(q.lead);
     return {kind,preset,squad:{title:sLine(q.title,80)||preset.sku,mark:sMark(q.mark),metal:sOne(q.metal,METALS,'brass'),emblem:safePath(q.emblem),
-      lead:mem.some(m=>m.key===lead)?lead:mem[0].key,replaces:sOne(q.replaces,ROLES.map(r=>r.id),null),doctrine:sLine(q.doctrine,60),blurb:sLine(q.blurb,300)},members:mem};
+      lead:mem.some(m=>m.key===lead)?lead:mem[0].key,replaces:sOne(q.replaces,ROLES.filter(r=>!r.requiredFirst&&!r.localOnly).map(r=>r.id),null),doctrine:sLine(q.doctrine,60),blurb:sLine(q.blurb,300)},members:mem};
   }
   if(kind==='founders'){
     const f=j.founders&&typeof j.founders==='object'?j.founders:null;if(!f)return null;
