@@ -1,0 +1,17 @@
+{
+  "name": "CADRE",
+  "install": "mkdir -p \"$HOME/.cadre-test-runtime\" && npm install --prefix \"$HOME/.cadre-test-runtime\" --no-save --ignore-scripts jsdom@24",
+  "terminals": [
+    {
+      "name": "static-server",
+      "command": "python3 -m http.server 8000",
+      "description": "Serves the single-file app at http://localhost:8000/index.html for manual/browser testing."
+    }
+  ],
+  "ports": [
+    {
+      "name": "app",
+      "port": 8000
+    }
+  ]
+}
